@@ -26,4 +26,8 @@ data class BookCard(
 
 sealed class BookQueryResult
 object NoBookFound : BookQueryResult()
-data class BookFound(val books: List<BookCard>) : BookQueryResult()
+data class BookFound(val books: List<BookCard>) : BookQueryResult() {
+    init {
+        require(books.isNotEmpty()) { "'books' cannot be empty" }
+    }
+}

@@ -8,6 +8,7 @@ object Greece : Topic()
 object Persia : Topic()
 object Philosophy : Topic()
 object Royalty : Topic()
+object Tradition : Topic()
 
 object Catalog {
     private val phaedrus = BookCard(
@@ -32,7 +33,19 @@ object Catalog {
         "English",
         80)
 
-    val allBooks = listOf(phaedrus, theEpicOfGilgamesh)
+
+    private val theHistories = BookCard(
+        "0140449086",
+        "Herodotus",
+        "The Histories",
+        "A record of ancient traditions of Western Asia, Northern Africa and Greece.",
+        "450 to 420 BC",
+        setOf(Africa, Asia, Greece, Tradition),
+        "Penguin Classics",
+        "English",
+        771)
+
+    val allBooks = listOf(phaedrus, theEpicOfGilgamesh, theHistories)
     val booksByIsbn = allBooks
         .associateBy { it.isbn }
 }
