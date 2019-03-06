@@ -53,14 +53,12 @@ class DeviceGroup(private val groupId: String) : AbstractActor() {
 
     private fun onTerminated(msg: Terminated) {
         val ref = msg.actor
-        val deviceId = actorToDeviceId[ref]
+        val deviceId = actorToDeviceId.remove(ref)
         if (deviceId == null) {
-            log.warning("received Terminated msg for untracked actor '$ref'")
+            log.warning("received Terminated msg for unregistered actor '$ref'")
             return
         }
-
         log.info("device actor for {} has been terminated", deviceId)
-        actorToDeviceId.remove(ref)
         deviceIdToActor.remove(deviceId)
     }
 
