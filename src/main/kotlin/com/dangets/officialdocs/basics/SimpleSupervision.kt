@@ -1,4 +1,4 @@
-package com.dangets.officialdocs
+package com.dangets.officialdocs.basics
 
 import akka.actor.AbstractActor
 import akka.actor.ActorRef

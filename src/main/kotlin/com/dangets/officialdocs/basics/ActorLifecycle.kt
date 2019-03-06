@@ -1,4 +1,4 @@
-package com.dangets.officialdocs
+package com.dangets.officialdocs.basics
 
 import akka.actor.AbstractActor
 import akka.actor.ActorRef
@@ -11,7 +11,7 @@ class StartStopActor(private val count: Int) : AbstractActor() {
     override fun preStart() {
         println("$name - preStart")
         if (count > 0)
-            context.actorOf(StartStopActor.props(count - 1))
+            context.actorOf(props(count - 1))
     }
 
     override fun postStop() {
