@@ -1,6 +1,8 @@
 package com.dangets.officialdocs.iot
 
+import akka.actor.ActorRef
 import akka.actor.ActorSystem
+import akka.actor.PoisonPill
 import akka.testkit.javadsl.TestKit
 import org.junit.Test
 import org.junit.jupiter.api.AfterAll
@@ -78,5 +80,60 @@ internal class DeviceGroupTest {
         val ref2 = probe.lastSender
 
         assertEquals(ref1, ref2)
+    }
+
+    @Test
+    fun `list active devices`() {
+        val probe = TestKit(system)
+
+        val deviceGroup = system.actorOf(DeviceGroup.props("groupABC"))
+        // deviceA
+        deviceGroup.tell(RequestTrackDevice("groupABC", "deviceA"), probe.ref)
+        probe.expectMsg(DeviceRegistered)
+        val refA = probe.lastSender
+
+        // deviceB
+        deviceGroup.tell(RequestTrackDevice("groupABC", "deviceB"), probe.ref)
+        probe.expectMsg(DeviceRegistered)
+        val refB = probe.lastSender
+
+        deviceGroup.tell(DeviceGroup.RequestDeviceList(123), probe.ref)
+        val deviceList = probe.expectMsgClass(DeviceGroup.ReplyDeviceList::class.java)
+        assertEquals(123, deviceList.requestId)
+        assertEquals(setOf("deviceA", "deviceB"), deviceList.ids)
+    }
+
+    @Test
+    fun `list active devices after one terminates`() {
+        val probe = TestKit(system)
+
+        val deviceGroup = system.actorOf(DeviceGroup.props("groupABC"))
+        // deviceA
+        deviceGroup.tell(RequestTrackDevice("groupABC", "deviceA"), probe.ref)
+        probe.expectMsg(DeviceRegistered)
+        val refA = probe.lastSender
+
+        // deviceB
+        deviceGroup.tell(RequestTrackDevice("groupABC", "deviceB"), probe.ref)
+        probe.expectMsg(DeviceRegistered)
+        val refB = probe.lastSender
+
+        deviceGroup.tell(DeviceGroup.RequestDeviceList(123), probe.ref)
+        val deviceList = probe.expectMsgClass(DeviceGroup.ReplyDeviceList::class.java)
+        assertEquals(123, deviceList.requestId)
+        assertEquals(setOf("deviceA", "deviceB"), deviceList.ids)
+
+        // now tell one device actor to shut down
+
+        probe.watch(refA)
+        refA.tell(PoisonPill.getInstance(), ActorRef.noSender())
+        probe.expectTerminated(refA)
+
+        probe.awaitAssert {
+            deviceGroup.tell(DeviceGroup.RequestDeviceList(1), probe.ref)
+            val newDeviceList = probe.expectMsgClass(DeviceGroup.ReplyDeviceList::class.java)
+            assertEquals(1, newDeviceList.requestId)
+            assertEquals(setOf("deviceB"), newDeviceList.ids)
+        }
     }
 }
