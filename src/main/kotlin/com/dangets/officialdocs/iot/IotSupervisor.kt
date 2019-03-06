@@ -6,7 +6,7 @@ import akka.event.Logging
 import akka.event.LoggingAdapter
 
 class IotSupervisor : AbstractActor() {
-    val log: LoggingAdapter = Logging.getLogger(context.system, this)
+    private val log: LoggingAdapter = Logging.getLogger(context.system, this)
 
     override fun preStart() {
         log.info("IoT application started")
@@ -17,7 +17,8 @@ class IotSupervisor : AbstractActor() {
     }
 
     override fun createReceive(): Receive {
-        return receiveBuilder().build()
+        return receiveBuilder()
+            .build()
     }
 
     companion object {

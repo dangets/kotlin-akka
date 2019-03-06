@@ -5,7 +5,7 @@ import akka.actor.Props
 import akka.event.Logging
 import akka.event.LoggingAdapter
 
-class Device(val groupId: String, val deviceId: String) : AbstractActor() {
+class Device(private val groupId: String, private val deviceId: String) : AbstractActor() {
     private val log: LoggingAdapter = Logging.getLogger(context.system, self)
 
     private var lastTemperatureReading: Double? = null
@@ -20,6 +20,18 @@ class Device(val groupId: String, val deviceId: String) : AbstractActor() {
 
     override fun createReceive(): Receive {
         return receiveBuilder()
+            .match(RequestTrackDevice::class.java) { msg ->
+                if (groupId == msg.groupId && deviceId == msg.deviceId) {
+                    sender.tell(DeviceRegistered, self)
+                } else {
+                    log.warning("Ignoring track device request for {}-{}.  This actor is responsible for {}-{}.", msg.groupId, msg.deviceId, groupId, deviceId)
+                }
+            }
+            .match(RecordTemperature::class.java) { msg ->
+                lastTemperatureReading = msg.temperature
+                log.info("recorded temperature reading {} of {}", msg.requestId, msg.temperature)
+                sender.tell(TemperatureRecorded(msg.requestId), self)
+            }
             .match(ReadTemperature::class.java) { msg ->
                 sender.tell(RespondTemperature(msg.requestId, lastTemperatureReading), self)
             }
@@ -31,5 +43,7 @@ class Device(val groupId: String, val deviceId: String) : AbstractActor() {
     }
 
     data class ReadTemperature(val requestId: Long)
-    data class RespondTemperature(val requestId: Long, val value: Double?)
+    data class RespondTemperature(val requestId: Long, val temperature: Double?)
+    data class RecordTemperature(val requestId: Long, val temperature: Double)
+    data class TemperatureRecorded(val requestId: Long)
 }
