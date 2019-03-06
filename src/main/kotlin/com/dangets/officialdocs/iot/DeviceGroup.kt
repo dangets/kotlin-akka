@@ -68,4 +68,14 @@ class DeviceGroup(private val groupId: String) : AbstractActor() {
 
     data class RequestDeviceList(val requestId: Long)
     data class ReplyDeviceList(val requestId: Long, val ids: Set<String>)
+
+    data class RequestAllTemperatures(val requestId: Long)
+    data class RespondAllTemperatures(val requestId: Long, val temperatures: Map<String, TemperatureReading>)
+
+    sealed class TemperatureReading {
+        data class Ok(val temperature: Double) : TemperatureReading()
+        object TemperatureNotAvailable : TemperatureReading()
+        object DeviceNotAvailable : TemperatureReading()
+        object DeviceTimedOut : TemperatureReading()
+    }
 }
