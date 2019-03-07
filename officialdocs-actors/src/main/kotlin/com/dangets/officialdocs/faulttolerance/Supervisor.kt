@@ -6,6 +6,16 @@ import akka.japi.pf.DeciderBuilder
 import scala.Option
 import java.time.Duration
 
+/**
+ * See [SupervisorTest] for supervisor strategy semantics
+ *
+ * Things to remember:
+ *  - if error is escalated to Supervisor, by default it will kill all children and *not* auto restart them
+ *  -- if you need child "auto" restarting, it needs to happen in the preStart
+ *  -- not sure if you can accumulate collection of children needing to be auto recreated ...
+ *  - by default remaining children are killed in the preRestart method
+ *  -- if you want to avoid killing children you can just put an empty overload for preRestart
+ */
 class Supervisor : AbstractActor() {
     override fun supervisorStrategy() = strategy
 
