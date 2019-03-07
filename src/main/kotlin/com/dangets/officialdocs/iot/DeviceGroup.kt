@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.actor.Terminated
 import akka.event.Logging
+import java.time.Duration
 
 class DeviceGroup(private val groupId: String) : AbstractActor() {
     private val log = Logging.getLogger(context.system, this)
@@ -22,15 +23,14 @@ class DeviceGroup(private val groupId: String) : AbstractActor() {
 
     override fun createReceive(): Receive {
         return receiveBuilder()
-            .match(RequestTrackDevice::class.java) { onTrackDevice(it) }
-            .match(Terminated::class.java) { onTerminated(it) }
-            .match(RequestDeviceList::class.java) { req ->
-                sender.tell(ReplyDeviceList(req.requestId, deviceIdToActor.keys), self)
-            }
+            .match(RequestTrackDevice::class.java) { handleTrackDevice(it) }
+            .match(Terminated::class.java) { handleTerminated(it) }
+            .match(RequestDeviceList::class.java) { req -> sender.tell(ReplyDeviceList(req.requestId, deviceIdToActor.keys), self) }
+            .match(RequestAllTemperatures::class.java) { handleRequestAllTemperatures() }
             .build()
     }
 
-    private fun onTrackDevice(req: RequestTrackDevice) {
+    private fun handleTrackDevice(req: RequestTrackDevice) {
         if (groupId != req.groupId) {
             log.warning("Ignoring TrackDevice request for {}.  This actor is responsible for {}.", req.groupId, groupId)
             return
@@ -51,7 +51,7 @@ class DeviceGroup(private val groupId: String) : AbstractActor() {
         deviceActor.forward(req, context)
     }
 
-    private fun onTerminated(msg: Terminated) {
+    private fun handleTerminated(msg: Terminated) {
         val ref = msg.actor
         val deviceId = actorToDeviceId.remove(ref)
         if (deviceId == null) {
@@ -60,6 +60,17 @@ class DeviceGroup(private val groupId: String) : AbstractActor() {
         }
         log.info("device actor for {} has been terminated", deviceId)
         deviceIdToActor.remove(deviceId)
+    }
+
+    private fun handleRequestAllTemperatures() {
+        // create a TemperatureQueryActor to handle the request and respond back to the sender
+        //  if I wanted to be clever and throttle # of requests to devices, should watch this created actor, and forward new requests on to it until it dies
+        //    this would require maintaining more state, but would be more efficient
+        //  eh... on second thought it might not be that much more efficient
+        //    the Device actors are decoupled from actual temperature sampling and essentially cache the last seen value
+        val devicesCopy = HashMap(deviceIdToActor)
+        val timeout = Duration.ofSeconds(3)
+        context.actorOf(TemperatureQueryActor.props(self, -1, sender, devicesCopy, timeout))
     }
 
     companion object {
