@@ -1,9 +1,6 @@
 package com.dangets.officialdocs.iot
 
-import akka.actor.AbstractActor
-import akka.actor.ActorRef
-import akka.actor.Cancellable
-import akka.actor.Props
+import akka.actor.*
 import akka.event.Logging
 import java.time.Duration
 
@@ -22,15 +19,19 @@ class TemperatureQueryActor(private val onBehalfOf: ActorRef,
         actorToDeviceId = deviceActors
             .map { (k, v) -> v to k }
             .toMap()
-        require(deviceActors.size == actorToDeviceId.size) { "actorRefs must be unique" }
+        require(deviceActors.size == actorToDeviceId.size) { "device actorRefs must be unique" }
         deviceIdToResponse = mutableMapOf()
     }
 
     override fun preStart() {
         log.info("temperature query actor started")
 
-        // send a query message to all device actors (requestId might not really matter)
-        deviceActors.values.forEach { it.tell(Device.ReadTemperature(1), self) }
+        deviceActors.values.forEach {
+            // send a query message to device actor (requestId doesn't really matter here)
+            it.tell(Device.ReadTemperature(-1), self)
+            // watch the device actor in case it terminates before the timeout
+            context.watch(it)
+        }
 
         // schedule a message to self to signal when the timeout is up
         timeoutSignal = context.system.scheduler.scheduleOnce(
@@ -39,16 +40,18 @@ class TemperatureQueryActor(private val onBehalfOf: ActorRef,
 
     override fun postStop() {
         log.info("temperature query actor stopped")
+        timeoutSignal.cancel()
     }
 
     override fun createReceive(): Receive {
         return receiveBuilder()
             .matchEquals(QueryTimeout) { handleTimeout() }
-            .match(Device.RespondTemperature::class.java) { handle(it) }
+            .match(Device.RespondTemperature::class.java) { handleRespondTemperature(it) }
+            .match(Terminated::class.java) { handleTerminated() }
             .build()
     }
 
-    private fun handle(msg: Device.RespondTemperature) {
+    private fun handleRespondTemperature(msg: Device.RespondTemperature) {
         val deviceId = actorToDeviceId[sender]
         if (deviceId == null) {
             log.warning("received temperature response from unregistered actor '$sender'")
@@ -60,21 +63,32 @@ class TemperatureQueryActor(private val onBehalfOf: ActorRef,
             else -> DeviceGroup.TemperatureReading.Ok(msg.temperature)
         }
 
-        // check if all expected replies have come back in
-        if (deviceIdToResponse.size == deviceActors.size) {
-            timeoutSignal.cancel()
-            replyWithResponses()
+        replyIfAllResponsesIn()
+    }
+
+    private fun handleTerminated() {
+        val deviceId = actorToDeviceId[sender]
+        if (deviceId == null) {
+            log.warning("received terminated message from unregistered actor '$sender'")
+            return
         }
+
+        deviceIdToResponse[deviceId] = DeviceGroup.TemperatureReading.DeviceNotAvailable
+        replyIfAllResponsesIn()
     }
 
     private fun handleTimeout() {
         actorToDeviceId.forEach { _, devId ->
             deviceIdToResponse.computeIfAbsent(devId) { DeviceGroup.TemperatureReading.DeviceTimedOut }
         }
-        replyWithResponses()
+        replyIfAllResponsesIn()
     }
 
-    private fun replyWithResponses() {
+    private fun replyIfAllResponsesIn() {
+        // if all expected replies aren't set - don't do anything
+        if (deviceIdToResponse.size < deviceActors.size)
+            return
+
         replyTo.tell(DeviceGroup.RespondAllTemperatures(requestId, deviceIdToResponse), onBehalfOf)
         // stop self (and discard any queued messages)
         context.stop(self)

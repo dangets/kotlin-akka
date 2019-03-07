@@ -111,4 +111,39 @@ internal class TemperatureQueryActorTest {
             { assertEquals(DeviceGroup.TemperatureReading.DeviceTimedOut, response.temperatures["d3"]) }
         )
     }
+
+    @Test
+    fun `device actor stops during query and completes response`() {
+        val probe = TestKit(system)
+
+        val timeout = Duration.ofSeconds(200)
+
+        val d1 = system.actorOf(TestDevice.props(Duration.ofMillis(100), 1.0))
+        val d2 = system.actorOf(TestDevice.props(Duration.ofMillis(200), 2.0))
+        val d3 = system.actorOf(TestDevice.props(Duration.ofSeconds(3), 3.0))
+
+        val queryRequestId = 42L
+        val deviceMap = mapOf("d1" to d1, "d2" to d2, "d3" to d3)
+
+        val queryActor = system.actorOf(TemperatureQueryActor.props(
+            onBehalfOf = probe.ref,  // Actor.noSender == null which blows up Kotlin nullability
+            deviceActors = deviceMap,
+            replyTo = probe.ref,
+            requestId = queryRequestId,
+            timeout = timeout
+        ))
+
+        // explicitly stop d3 when it should be the last response
+        system.scheduler.scheduleOnce(Duration.ofMillis(300), { system.stop(d3) }, system.dispatcher)
+
+        val response = probe.expectMsgClass(DeviceGroup.RespondAllTemperatures::class.java)
+
+        assertAll(
+            { assertEquals(queryRequestId, response.requestId) },
+            { assertEquals(3, response.temperatures.size) },
+            { assertEquals(DeviceGroup.TemperatureReading.Ok(1.0), response.temperatures["d1"]) },
+            { assertEquals(DeviceGroup.TemperatureReading.Ok(2.0), response.temperatures["d2"]) },
+            { assertEquals(DeviceGroup.TemperatureReading.DeviceNotAvailable, response.temperatures["d3"]) }
+        )
+    }
 }
