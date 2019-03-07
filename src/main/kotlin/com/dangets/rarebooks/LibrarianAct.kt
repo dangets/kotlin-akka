@@ -16,7 +16,9 @@ class LibrarianAct(private val findBookDuration: Duration) : AbstractActorWithSt
                 null -> NoBookFound
                 else -> BookFound(listOf(book))
             }
-            context.system.scheduler.scheduleOnce(findBookDuration, { self.tell(BusyDone(reply, sender), self) }, context.dispatcher)
+
+            context.system.scheduler.scheduleOnce(findBookDuration,
+                self, BusyDone(reply, sender), context.dispatcher, self)
             context.become(busy)
         }
         .build()
