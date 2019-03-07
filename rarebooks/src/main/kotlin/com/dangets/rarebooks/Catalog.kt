@@ -20,7 +20,8 @@ object Catalog {
         setOf(Greece, Philosophy),
         "Hackett Publishing Company, Inc.",
         "English",
-        144)
+        144
+    )
 
     private val theEpicOfGilgamesh = BookCard(
         "0141026286",
@@ -31,7 +32,8 @@ object Catalog {
         setOf(Gilgamesh, Persia, Royalty),
         "Penguin Classics",
         "English",
-        80)
+        80
+    )
 
 
     private val theHistories = BookCard(
@@ -40,12 +42,22 @@ object Catalog {
         "The Histories",
         "A record of ancient traditions of Western Asia, Northern Africa and Greece.",
         "450 to 420 BC",
-        setOf(Africa, Asia, Greece, Tradition),
+        setOf(
+            Africa,
+            Asia,
+            Greece,
+            Tradition
+        ),
         "Penguin Classics",
         "English",
-        771)
+        771
+    )
 
-    val allBooks = listOf(phaedrus, theEpicOfGilgamesh, theHistories)
+    val allBooks = listOf(
+        phaedrus,
+        theEpicOfGilgamesh,
+        theHistories
+    )
     val booksByIsbn = allBooks
         .associateBy { it.isbn }
 }

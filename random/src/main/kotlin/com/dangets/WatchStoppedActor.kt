@@ -16,7 +16,8 @@ fun main() {
 
     system.stop(a2)
 
-    system.scheduler.scheduleOnce(Duration.ofMillis(500), a1, Actor1.WatchMe(a2), system.dispatcher, ActorRef.noSender())
+    system.scheduler.scheduleOnce(Duration.ofMillis(500), a1,
+        Actor1.WatchMe(a2), system.dispatcher, ActorRef.noSender())
 
     try {
         println(">>> press ENTER to exit <<<")

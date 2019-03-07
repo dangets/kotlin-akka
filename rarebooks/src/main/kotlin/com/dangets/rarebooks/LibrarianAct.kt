@@ -24,7 +24,7 @@ class LibrarianAct(private val findBookDuration: Duration) : AbstractActorWithSt
         .build()
 
     private val busy: Receive = receiveBuilder()
-        .match(BusyDone::class.java) { msg ->
+        .match(Companion.BusyDone::class.java) { msg ->
             msg.customer.tell(msg.bookQueryResult, self)
             unstashAll()
             context.become(ready)
