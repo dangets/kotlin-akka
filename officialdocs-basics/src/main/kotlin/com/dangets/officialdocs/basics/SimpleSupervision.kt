@@ -5,6 +5,14 @@ import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 
+/*
+ Demonstrates 'default' supervision (no explicit SupervisorStrategy setup)
+
+ When child actor throws an exception it will be auto-restarted
+ */
+
+
+
 class SupervisingActor : AbstractActor() {
     private val child = context.actorOf(SupervisedActor.props, "supervised-actor")
 
