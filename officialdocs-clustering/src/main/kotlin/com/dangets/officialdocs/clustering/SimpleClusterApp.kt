@@ -36,8 +36,7 @@ fun main() {
             Command.Exit -> break@repl
             is Command.Invalid -> { println("invalid command: ${cmd.msg}")}
             is Command.StartSystem -> {
-                val system = createSystem(baseConfig, cmd.port)
-                systems[cmd.port] = system
+                systems.computeIfAbsent(cmd.port) { port -> createSystem(baseConfig, port) }
             }
             is Command.TerminateSystem -> {
                 val system = systems.remove(cmd.port)
