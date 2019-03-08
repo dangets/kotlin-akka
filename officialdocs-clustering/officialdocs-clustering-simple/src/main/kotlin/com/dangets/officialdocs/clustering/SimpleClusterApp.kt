@@ -9,7 +9,7 @@ fun createSystem(baseConfig: Config, port: Int): ActorSystem {
         .parseString("akka.remote.netty.tcp.port=$port")
         .withFallback(baseConfig)
 
-    val system = ActorSystem.create("ClusterSystem$port", config)
+    val system = ActorSystem.create("ClusterSystem", config)
     system.actorOf(SimpleClusterListener.props)
 
     return system
@@ -34,9 +34,14 @@ fun main() {
         val cmd = parseCommand(line.split(" "))
         when (cmd) {
             Command.Exit -> break@repl
-            is Command.Invalid -> { println("invalid command: ${cmd.msg}")}
+            is Command.Invalid -> { println(cmd.msg)}
             is Command.StartSystem -> {
-                systems.computeIfAbsent(cmd.port) { port -> createSystem(baseConfig, port) }
+                systems.computeIfAbsent(cmd.port) { port ->
+                    createSystem(
+                        baseConfig,
+                        port
+                    )
+                }
             }
             is Command.TerminateSystem -> {
                 val system = systems.remove(cmd.port)
