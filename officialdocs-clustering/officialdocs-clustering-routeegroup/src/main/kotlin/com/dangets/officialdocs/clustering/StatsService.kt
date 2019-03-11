@@ -1,6 +1,7 @@
 package com.dangets.officialdocs.clustering
 
 import akka.actor.AbstractActor
+import akka.actor.Props
 import akka.routing.ConsistentHashingRouter
 import akka.routing.FromConfig
 
@@ -23,5 +24,9 @@ class StatsService : AbstractActor() {
                     }
                 })
             .build()
+    }
+
+    companion object {
+        val props: Props = Props.create(StatsService::class.java) { StatsService() }
     }
 }
