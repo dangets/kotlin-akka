@@ -48,6 +48,11 @@
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
+                <artifactId>akka-cluster-tools_${akka.scala.version}</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-cluster-metrics_${akka.scala.version}</artifactId>
                 <version>${akka.version}</version>
             </dependency>
