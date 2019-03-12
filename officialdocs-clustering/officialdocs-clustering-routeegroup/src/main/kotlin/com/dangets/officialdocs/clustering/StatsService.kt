@@ -27,6 +27,6 @@ class StatsService : AbstractActor() {
     }
 
     companion object {
-        val props = Props.create(StatsService::class.java) { StatsService() }
+        val props: Props = Props.create(StatsService::class.java) { StatsService() }
     }
 }

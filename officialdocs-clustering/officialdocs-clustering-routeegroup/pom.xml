@@ -33,6 +33,14 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster_${akka.scala.version}</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster-tools_${akka.scala.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster-metrics_${akka.scala.version}</artifactId>
+        </dependency>
 
         <!-- testing -->
         <dependency>
