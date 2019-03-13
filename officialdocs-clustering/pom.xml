@@ -17,5 +17,6 @@
     <modules>
         <module>officialdocs-clustering-simple</module>
         <module>officialdocs-clustering-routeegroup</module>
+        <module>officialdocs-distpubsub</module>
     </modules>
 </project>
